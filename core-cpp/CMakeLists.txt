@@ -27,6 +27,7 @@ FetchContent_MakeAvailable(spdlog nlohmann_json)
 add_library(template_insight_core
     src/api.cpp
     src/config.cpp
+    src/issues.cpp
 )
 
 target_include_directories(template_insight_core

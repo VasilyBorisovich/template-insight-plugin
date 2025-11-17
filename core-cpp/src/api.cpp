@@ -4,6 +4,8 @@
 
 #include <spdlog/spdlog.h>
 
+#include "issues.hpp"
+
 namespace template_insight {
 
 namespace {
@@ -26,7 +28,9 @@ std::string jsonEscape(const std::string& s) {
 
 /// A tiny helper used in the stub implementation to demonstrate
 /// how you could detect a specific kind of template-related error.
-TemplateInsightResult analyzeSimpleNoMember(const std::string& logText) {
+///
+/// Now it takes IssueRegistry so we can populate the issue from metadata.
+TemplateInsightResult analyzeSimpleNoMember(const std::string& logText, const IssueRegistry& registry) {
     TemplateInsightResult result;
 
     const std::string needle = "no member";
@@ -35,14 +39,25 @@ TemplateInsightResult analyzeSimpleNoMember(const std::string& logText) {
         SPDLOG_DEBUG("Detected substring '{}' at position {} in diagnostics.", needle, pos);
 
         TemplateIssue issue;
-        issue.id = "NO_MEMBER";
-        issue.type = TemplateIssueType::NoMember;
-        issue.severity = Severity::Error;
-        issue.shortMessage = "Detected 'no member' error in diagnostics.";
-        issue.detailedMessage =
-            "The compiler reported that a type does not have a required member.\n"
-            "This is often caused by using a type that does not meet template "
-            "requirements (e.g., passing an int where a container is expected).";
+        issue.code = IssueCodes::NO_MEMBER;
+
+        // Try to get metadata from the registry.
+        if (auto kind = registry.find(issue.code)) {
+            issue.category        = kind->category;
+            issue.severity        = kind->defaultSeverity;
+            issue.shortMessage    = kind->defaultShortMessage;
+            issue.detailedMessage = kind->defaultDetailedMessage;
+        } else {
+            // Fallback hard-coded defaults if registry does not know this code.
+            issue.category = "MemberAccess";
+            issue.severity = Severity::Error;
+            issue.shortMessage =
+                "Detected 'no member' error in diagnostics.";
+            issue.detailedMessage =
+                "The compiler reported that a type does not have a required member.\n"
+                "This is often caused by using a type that does not meet template "
+                "requirements (e.g., passing an int where a container is expected).";
+        }
 
         issue.location = std::nullopt;
         result.issues.push_back(std::move(issue));
@@ -62,16 +77,15 @@ std::string severityToString(Severity s) {
     return "unknown";
 }
 
-std::string issueTypeToString(TemplateIssueType t) {
-    switch (t) {
-        case TemplateIssueType::NoMember:              return "NO_MEMBER";
-        case TemplateIssueType::NoMatchingFunction:    return "NO_MATCHING_FUNCTION";
-        case TemplateIssueType::TypeMismatch:          return "TYPE_MISMATCH";
-        case TemplateIssueType::SubstitutionFailure:   return "SUBSTITUTION_FAILURE";
-        case TemplateIssueType::ConstraintNotSatisfied:return "CONSTRAINT_NOT_SATISFIED";
-        case TemplateIssueType::Unknown:               return "UNKNOWN";
+/// Utility: check if an issue code is enabled in the analysis config.
+/// If enabledIssueCodes is empty, all codes are allowed.
+bool isIssueCodeEnabled(const std::string& code, const AnalysisConfig& cfg) {
+    if (cfg.enabledIssueCodes.empty()) {
+        return true;
     }
-    return "UNKNOWN";
+    return std::find(cfg.enabledIssueCodes.begin(),
+        cfg.enabledIssueCodes.end(),
+        code) != cfg.enabledIssueCodes.end();
 }
 
 } // namespace
@@ -87,20 +101,48 @@ TemplateInsightResult analyzeDiagnostics(
                  config.logger.filePath,
                  config.logger.maxFileSize,
                  config.logger.maxFiles);
+    // Initialize issue registry.
+    IssueRegistry registry;
+    if (!config.analysis.issueKindsFile.empty()) {
+        try {
+            registry.loadFromJsonFile(config.analysis.issueKindsFile);
+            SPDLOG_INFO("Loaded issue kinds from '{}'", config.analysis.issueKindsFile);
+        } catch (const std::exception& ex) {
+            SPDLOG_WARN("Failed to load issue kinds file '{}': {}. Falling back to built-in defaults.",
+                        config.analysis.issueKindsFile, ex.what());
+        }
+    } else {
+        SPDLOG_INFO("No issue_kinds_file specified. Using built-in issue defaults.");
+    }
 
-    // In the future, you can branch on options / config here,
-    // e.g., enable/disable certain checks, limit number of issues, etc.
-    TemplateInsightResult result = analyzeSimpleNoMember(logText);
+    // Here we eventually will run multiple checks; for now only the simple stub.
+    TemplateInsightResult rawResult = analyzeSimpleNoMember(logText, registry);
+    TemplateInsightResult filteredResult;
 
-    SPDLOG_INFO("Diagnostics analysis complete. Issues found: {}", result.issues.size());
-    for (const auto& issue : result.issues) {
-        SPDLOG_DEBUG("Issue: id='{}', type='{}', severity='{}'",
-                     issue.id,
-                     issueTypeToString(issue.type),
+    // Apply basic filtering based on enabled issue codes and maxIssues.
+    for (const auto& issue : rawResult.issues) {
+        if (!isIssueCodeEnabled(issue.code, config.analysis)) {
+            SPDLOG_DEBUG("Skipping issue with code '{}' due to analysis.enabledIssueCodes filter.", issue.code);
+            continue;
+        }
+
+        filteredResult.issues.push_back(issue);
+        if (filteredResult.issues.size() >= config.analysis.maxIssues) {
+            SPDLOG_INFO("Reached max_issues limit ({}). Remaining issues will be ignored.",
+                        config.analysis.maxIssues);
+            break;
+        }
+    }
+
+    SPDLOG_INFO("Diagnostics analysis complete. Issues found: {}", filteredResult.issues.size());
+    for (const auto& issue : filteredResult.issues) {
+        SPDLOG_DEBUG("Issue: code='{}', category='{}', severity='{}'",
+                     issue.code,
+                     issue.category,
                      severityToString(issue.severity));
     }
 
-    return result;
+    return filteredResult;
 }
 
 std::string serializeToJson(const TemplateInsightResult& result) {
@@ -113,8 +155,8 @@ std::string serializeToJson(const TemplateInsightResult& result) {
             oss << ", ";
         }
         oss << "{";
-        oss << "\"id\":\"" << jsonEscape(issue.id) << "\",";
-        oss << "\"type\":\"" << jsonEscape(issueTypeToString(issue.type)) << "\",";
+        oss << "\"code\":\"" << jsonEscape(issue.code) << "\",";
+        oss << "\"category\":\"" << jsonEscape(issue.category) << "\",";
         oss << "\"severity\":\"" << jsonEscape(severityToString(issue.severity)) << "\",";
         oss << "\"shortMessage\":\"" << jsonEscape(issue.shortMessage) << "\",";
         oss << "\"detailedMessage\":\"" << jsonEscape(issue.detailedMessage) << "\"";

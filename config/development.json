@@ -2,7 +2,8 @@
   "analysis": {
     "max_template_depth": 5,
     "enable_optimizations": false,
-    "timeout_ms": 30000
+    "timeout_ms": 30000,
+    "issue_kinds_file": "issue_kinds.json"
   },
   "output": {
     "format": "human",

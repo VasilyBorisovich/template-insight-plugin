@@ -28,6 +28,50 @@ spdlog::level::level_enum parseLogLevel(const std::string& levelStr) {
     return spdlog::level::info;
 }
 
+static AnalysisConfig parseAnalysisConfig(const json& jAnalysis) {
+    AnalysisConfig cfg;
+
+    if (jAnalysis.contains("max_template_depth") && jAnalysis["max_template_depth"].is_number_integer()) {
+        cfg.maxTemplateDepth = jAnalysis["max_template_depth"].get<int>();
+    }
+    if (jAnalysis.contains("enable_optimizations") && jAnalysis["enable_optimizations"].is_boolean()) {
+        cfg.enableOptimizations = jAnalysis["enable_optimizations"].get<bool>();
+    }
+    if (jAnalysis.contains("timeout_ms") && jAnalysis["timeout_ms"].is_number_integer()) {
+        cfg.timeoutMs = jAnalysis["timeout_ms"].get<int>();
+    }
+    if (jAnalysis.contains("enabled_issue_codes") && jAnalysis["enabled_issue_codes"].is_array()) {
+        for (const auto& v : jAnalysis["enabled_issue_codes"]) {
+            if (v.is_string()) {
+                cfg.enabledIssueCodes.push_back(v.get<std::string>());
+            }
+        }
+    }
+    if (jAnalysis.contains("max_issues") && jAnalysis["max_issues"].is_number_unsigned()) {
+        cfg.maxIssues = jAnalysis["max_issues"].get<std::size_t>();
+    }
+    if (jAnalysis.contains("issue_kinds_file") && jAnalysis["issue_kinds_file"].is_string()) {
+        cfg.issueKindsFile = jAnalysis["issue_kinds_file"].get<std::string>();
+    }
+
+    return cfg;
+}
+static OutputConfig parseOutputConfig(const json& jOutput) {
+    OutputConfig cfg;
+
+    if (jOutput.contains("format") && jOutput["format"].is_string()) {
+        cfg.format = jOutput["format"].get<std::string>();
+    }
+    if (jOutput.contains("verbose") && jOutput["verbose"].is_boolean()) {
+        cfg.verbose = jOutput["verbose"].get<bool>();
+    }
+    if (jOutput.contains("output_file") && jOutput["output_file"].is_string()) {
+        cfg.outputFile = jOutput["output_file"].get<std::string>();
+    }
+
+    return cfg;
+}
+
 static LoggerConfig parseLoggerConfig(const json& jLogger) {
     LoggerConfig cfg;
 
@@ -64,6 +108,12 @@ AppConfig loadConfigFromJsonFile(const std::string& path) {
 
     if (j.contains("logger") && j["logger"].is_object()) {
         cfg.logger = parseLoggerConfig(j["logger"]);
+    }
+    if (j.contains("analysis") && j["analysis"].is_object()) {
+        cfg.analysis = parseAnalysisConfig(j["analysis"]);
+    }
+    if (j.contains("output") && j["output"].is_object()) {
+        cfg.output = parseOutputConfig(j["output"]);
     }
 
     return cfg;

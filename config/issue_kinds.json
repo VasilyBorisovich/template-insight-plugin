@@ -1,0 +1,25 @@
+{
+  "issue_kinds": [
+    {
+      "code": "NO_MEMBER",
+      "category": "MemberAccess",
+      "default_severity": "error",
+      "default_short_message": "Type does not have the required member.",
+      "default_detailed_message": "The type used in a template instantiation does not provide the required member function or field."
+    },
+    {
+      "code": "NO_MATCHING_FUNCTION",
+      "category": "OverloadResolution",
+      "default_severity": "error",
+      "default_short_message": "No matching function for template call.",
+      "default_detailed_message": "The template call cannot be resolved to any viable overload with the given arguments."
+    },
+    {
+      "code": "TYPE_MISMATCH",
+      "category": "TypeSystem",
+      "default_severity": "error",
+      "default_short_message": "Template parameter type mismatch.",
+      "default_detailed_message": "The deduced template parameter type does not match the required constraints or expected type."
+    }
+  ]
+}
