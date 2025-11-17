@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Template Insight Configuration",
+  "description": "Конфигурация для анализа C++ шаблонов",
+  "type": "object",
+  "properties": {
+    "analysis": {
+      "type": "object",
+      "description": "Настройки анализа шаблонов",
+      "properties": {
+        "max_template_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "default": 10,
+          "description": "Максимальная глубина рекурсивного анализа шаблонов"
+        },
+        "enable_optimizations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Включить оптимизации анализа для больших проектов"
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 5000,
+          "description": "Таймаут анализа в миллисекундах"
+        }
+      },
+      "required": ["max_template_depth"]
+    },
+    "output": {
+      "type": "object",
+      "description": "Настройки вывода результатов",
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": ["json", "human", "yaml", "xml"],
+          "default": "json",
+          "description": "Формат вывода результатов анализа"
+        },
+        "verbose": {
+          "type": "boolean",
+          "default": false,
+          "description": "Подробный вывод с дополнительной информацией"
+        },
+        "output_file": {
+          "type": "string",
+          "default": "analysis_result.json",
+          "description": "Файл для сохранения результатов (если пусто - вывод в stdout)"
+        }
+      }
+    },
+    "logger": {
+      "type": "object",
+      "description": "Настройки логирования работы приложения",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["trace", "debug", "info", "warning", "error", "critical"],
+          "default": "info",
+          "description": "Уровень детализации логов: trace, debug, info, warning, error, critical"
+        },
+        "file": {
+          "type": "string",
+          "default": "logs/template_insight.log",
+          "description": "Путь к файлу логов (относительно рабочей директории)"
+        },
+        "max_size": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 1073741824,
+          "default": 1048576,
+          "description": "Максимальный размер файла лога в байтах перед ротацией"
+        },
+        "max_files": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100,
+          "default": 5,
+          "description": "Максимальное количество файлов логов при ротации"
+        },
+        "console_output": {
+          "type": "boolean",
+          "default": true,
+          "description": "Дублировать логи в консоль"
+        },
+        "pattern": {
+          "type": "string",
+          "default": "[%Y-%m-%d %H:%M:%S.%e] [%l] %v",
+          "description": "Шаблон форматирования логов (spdlog syntax)"
+        }
+      },
+      "required": ["level", "file"]
+    }
+  },
+  "required": ["analysis", "output", "logger"],
+  "additionalProperties": false
+}

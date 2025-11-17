@@ -1,0 +1,14 @@
+{
+  "analysis": {
+    "max_template_depth": 5,
+    "enable_optimizations": false,
+    "timeout_ms": 30000
+  },
+  "output": {
+    "format": "human",
+    "verbose": true
+  },
+  "logger": {
+    "level": "debug"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "analysis": {
+    "max_template_depth": 10,
+    "enable_optimizations": true,
+    "timeout_ms": 5000
+  },
+  "output": {
+    "format": "json",
+    "verbose": false,
+    "output_file": "analysis_result.json"
+  },
+  "logger": {
+    "level": "info",
+    "file": "template_insight.log"
+  }
+}
