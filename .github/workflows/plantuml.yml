@@ -1,0 +1,54 @@
+name: Generate PlantUML diagrams
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - "docs/architecture/**/*.puml"
+      - ".github/workflows/plantuml.yml"
+  workflow_dispatch:
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Download PlantUML
+        run: |
+          mkdir -p tools
+          curl -L -o tools/plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+
+      - name: Generate SVG diagrams from .puml
+        run: |
+          mkdir -p docs/architecture/generated
+          find docs/architecture -name "*.puml" -print0 | while IFS= read -r -d '' file; do
+            echo "Generating SVG for $file"
+            java -jar tools/plantuml.jar \
+              -tsvg \
+              -o generated \
+              "$file"
+          done
+
+      - name: Commit generated diagrams
+        if: github.ref != 'refs/heads/pull/*'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add docs/architecture/generated || true
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update PlantUML diagrams"
+            git push
+          fi
