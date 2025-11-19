@@ -1,0 +1,70 @@
+' API description of each module
+@startuml
+title Модуль core-cpp – публичный API и назначение
+
+package "core-cpp" {
+
+  class TemplateAnalyzer {
+    +AnalysisResult analyzeTranslationUnit(config: AppConfig, compileCommands: Path)
+    +AnalysisResult analyzeFile(config: AppConfig, path: Path)
+  }
+
+  class AppConfig {
+    +loadFromJson(path: Path): AppConfig
+    +validate(): void
+  }
+
+  class Issue {
+    +id: string
+    +type: TemplateIssueType
+    +message: string
+    +location: SourceLocation
+  }
+
+  enum TemplateIssueType {
+    NoMember
+    NoMatchingFunction
+    TypeMismatch
+    SubstitutionFailure
+  }
+
+  class IssueRegistry {
+    +register(issue: Issue): void
+    +getAll(): vector<Issue>
+  }
+
+  class SourceLocation {
+    +file: string
+    +line: int
+    +column: int
+  }
+
+  TemplateAnalyzer --> AppConfig
+  TemplateAnalyzer --> IssueRegistry
+  IssueRegistry --> Issue
+  Issue --> TemplateIssueType
+  Issue --> SourceLocation
+}
+
+note top of TemplateAnalyzer
+  Назначение:
+  - Высокоуровневый фасад для анализа C++-кода и шаблонов.
+  - Не знает про IDE/CLI, только про входные параметры и результаты.
+end note
+
+note right of AppConfig
+  Назначение:
+  - Конфигурация анализа:
+    * глубина анализа шаблонов
+    * включение/отключение типов ошибок
+    * лимиты по количеству проблем и времени
+end note
+
+note right of IssueRegistry
+  Назначение:
+  - Аккумулирует все найденные проблемы.
+  - Предоставляет удобный доступ для сериализации
+    в JSON/Protocol.
+end note
+
+@enduml

@@ -1,0 +1,43 @@
+' API + purpose
+@startuml
+title Модуль clion-plugin – основной API и назначение
+
+package "clion-plugin" {
+
+  class TemplateInsightPlugin {
+    +initComponent()
+    +disposeComponent()
+  }
+
+  class InspectionProvider {
+    +getInspectionTools(): List<LocalInspectionTool>
+  }
+
+  class AnalysisRunner {
+    +runAnalysis(project, files): AnalysisResult
+  }
+
+  class ResultMapper {
+    +toIdeProblemDescriptors(result: AnalysisResult): List<ProblemDescriptor>
+  }
+
+  TemplateInsightPlugin --> InspectionProvider
+  InspectionProvider --> AnalysisRunner
+  AnalysisRunner --> "uses" TiCli
+  AnalysisRunner --> ResultMapper
+}
+
+note top of TemplateInsightPlugin
+  Назначение:
+  - Точка входа плагина CLion / IntelliJ.
+  - Регистрирует инспекции, экшены, меню и т.д.
+end note
+
+note right of AnalysisRunner
+  Назначение:
+  - Формирует команду для ti-cli (или вызывает core-cpp
+    напрямую, если появится embedded-вариант).
+  - Собирает результаты и передаёт их в ResultMapper.
+end note
+
+@enduml

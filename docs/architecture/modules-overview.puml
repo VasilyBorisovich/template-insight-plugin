@@ -1,0 +1,22 @@
+@startuml
+title Template Insight – модульная схема
+
+skinparam componentStyle rectangle
+
+component "core-cpp\n(библиотека C++)" as CoreCpp
+component "ti-cli\n(исполняемый файл)" as Cli
+component "clion-plugin\n(плагин CLion)" as Clion
+component "analysis-protocol\n(JSON/IPC контракт)" as Protocol
+
+' Внешние участники (IDE / пользователь)
+actor "Пользователь" as User
+actor "CLion IDE" as IDE
+
+User --> IDE : запускает анализ через плагин
+IDE --> Clion : IDE API (IntelliJ Platform)
+Clion --> Cli : запускает процесс / передаёт параметры
+Cli --> CoreCpp : вызывает API анализа
+Cli --> Protocol : формирует результаты по контракту
+Clion --> Protocol : читает результаты и отображает в IDE
+
+@enduml

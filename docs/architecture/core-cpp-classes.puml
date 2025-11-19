@@ -1,0 +1,85 @@
+' core-cpp module classes
+@startuml
+title core-cpp – класс-диаграмма (черновой дизайн)
+
+skinparam classAttributeIconSize 0
+
+package "core-cpp" {
+
+  class TemplateAnalyzer {
+    -impl: AnalyzerImpl*
+    +AnalysisResult analyzeTranslationUnit(config: AppConfig, compileCommands: Path)
+    +AnalysisResult analyzeFile(config: AppConfig, path: Path)
+  }
+
+  class AnalyzerImpl {
+    -config: AppConfig
+    -issueRegistry: IssueRegistry
+    +runOnTranslationUnit(compileCommands: Path): AnalysisResult
+    +runOnFile(path: Path): AnalysisResult
+  }
+
+  class AppConfig {
+    +maxTemplateDepth: int
+    +enabledIssueTypes: set<TemplateIssueType>
+    +issueLimit: int
+    +timeLimitMs: int
+    +static fromJson(path: Path): AppConfig
+  }
+
+  class IssueRegistry {
+    -issues: vector<Issue>
+    +register(issue: Issue): void
+    +getAll(): const vector<Issue>&
+    +size(): size_t
+  }
+
+  class Issue {
+    +id: string
+    +type: TemplateIssueType
+    +message: string
+    +location: SourceLocation
+    +details: string
+  }
+
+  enum TemplateIssueType {
+    NoMember
+    NoMatchingFunction
+    TypeMismatch
+    SubstitutionFailure
+  }
+
+  class SourceLocation {
+    +file: string
+    +line: int
+    +column: int
+  }
+
+  class AstVisitor {
+    +visit(node: AstNode): void
+    -checkTemplateInstantiation(node: AstNode): void
+    -reportIssue(type: TemplateIssueType, node: AstNode, msg: string): void
+  }
+
+  interface CompilerFrontend {
+    +parse(compileCommands: Path): AstRoot
+    +parseFile(path: Path): AstRoot
+  }
+
+  class ClangFrontend implements CompilerFrontend {
+  }
+
+  ' Связи
+  TemplateAnalyzer --> AnalyzerImpl
+  AnalyzerImpl --> AppConfig
+  AnalyzerImpl --> IssueRegistry
+  AnalyzerImpl --> CompilerFrontend
+  AnalyzerImpl --> AstVisitor
+  AstVisitor --> IssueRegistry
+  IssueRegistry --> Issue
+  Issue --> TemplateIssueType
+  Issue --> SourceLocation
+
+}
+
+@enduml

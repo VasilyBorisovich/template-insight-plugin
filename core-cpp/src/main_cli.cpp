@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     (void)argv;
 
     try {
-        // For now we use a fixed config path. In the future you may want
+        // For now, we use a fixed config path. In the future you may want
         // to make this configurable via environment variable or IDE settings.
         const std::string configPath = "config.json";
 

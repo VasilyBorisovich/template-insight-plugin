@@ -135,7 +135,7 @@ TemplateInsightResult analyzeDiagnostics(
     }
 
     SPDLOG_INFO("Diagnostics analysis complete. Issues found: {}", filteredResult.issues.size());
-    for (const auto& issue : filteredResult.issues) {
+    for ([[maybe_unused]] const auto& issue : filteredResult.issues) {
         SPDLOG_DEBUG("Issue: code='{}', category='{}', severity='{}'",
                      issue.code,
                      issue.category,
@@ -155,16 +155,16 @@ std::string serializeToJson(const TemplateInsightResult& result) {
             oss << ", ";
         }
         oss << "{";
-        oss << "\"code\":\"" << jsonEscape(issue.code) << "\",";
-        oss << "\"category\":\"" << jsonEscape(issue.category) << "\",";
-        oss << "\"severity\":\"" << jsonEscape(severityToString(issue.severity)) << "\",";
-        oss << "\"shortMessage\":\"" << jsonEscape(issue.shortMessage) << "\",";
-        oss << "\"detailedMessage\":\"" << jsonEscape(issue.detailedMessage) << "\"";
+        oss << R"("code":")" << jsonEscape(issue.code) << "\",";
+        oss << R"("category":")" << jsonEscape(issue.category) << "\",";
+        oss << R"("severity":")" << jsonEscape(severityToString(issue.severity)) << "\",";
+        oss << R"("shortMessage":")" << jsonEscape(issue.shortMessage) << "\",";
+        oss << R"("detailedMessage":")" << jsonEscape(issue.detailedMessage) << "\"";
 
         if (issue.location.has_value()) {
             const auto& loc = *issue.location;
             oss << ",\"location\":{"
-                << "\"file\":\"" << jsonEscape(loc.file) << "\","
+                << R"("file":")" << jsonEscape(loc.file) << "\","
                 << "\"line\":" << loc.line << ","
                 << "\"column\":" << loc.column
                 << "}";

@@ -1,0 +1,40 @@
+' API + purpose
+@startuml
+title Модуль ti-cli – публичный интерфейс и назначение
+
+package "ti-cli" {
+
+  class TiCli {
+    +int main(argc: int, argv: char**)
+  }
+
+  class CliOptions {
+    +configPath: string
+    +compileCommandsPath: string
+    +outputFormat: string
+    +outputPath: string
+    +int parse(argc: int, argv: char**)
+  }
+
+  class JsonReporter {
+    +void write(result: AnalysisResult, path: string)
+  }
+
+  class StdoutReporter {
+    +void write(result: AnalysisResult)
+  }
+
+  TiCli --> CliOptions
+  TiCli --> "1" TemplateAnalyzer : uses
+  TiCli --> JsonReporter
+  TiCli --> StdoutReporter
+}
+
+note top of TiCli
+  Назначение:
+  - Входная точка командной строки.
+  - Конвертирует аргументы процесса в AppConfig
+    и вызывает core-cpp::TemplateAnalyzer.
+end note
+
+@enduml
