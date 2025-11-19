@@ -2,7 +2,7 @@ name: Generate PlantUML diagrams
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ master, main ]
     paths:
       - "docs/architecture/**/*.puml"
       - ".github/workflows/plantuml.yml"
@@ -22,6 +22,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz
+
       - name: Download PlantUML
         run: |
           mkdir -p tools
@@ -39,13 +44,10 @@ jobs:
           done
 
       - name: Commit generated diagrams
-        if: github.ref != 'refs/heads/pull/*'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
           git add docs/architecture/generated || true
-
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
